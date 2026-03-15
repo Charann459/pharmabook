@@ -1,0 +1,25 @@
+{
+  "name": "pharmabook",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PharmaBook monorepo — backend, mobile, web",
+  "scripts": {
+    "backend": "pnpm --filter @pharmabook/backend",
+    "mobile": "pnpm --filter @pharmabook/mobile",
+    "web": "pnpm --filter @pharmabook/web",
+
+    "dev:backend": "pnpm --filter @pharmabook/backend dev",
+    "dev:mobile": "pnpm --filter @pharmabook/mobile start",
+    "dev:web": "pnpm --filter @pharmabook/web dev",
+
+    "test:backend": "pnpm --filter @pharmabook/backend test",
+    "test:all": "pnpm -r test",
+
+    "lint": "pnpm -r lint",
+    "build:mobile": "pnpm --filter @pharmabook/mobile build:android"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

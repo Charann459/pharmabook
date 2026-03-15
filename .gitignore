@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment files — never commit these
+.env
+.env.local
+.env.production
+.env.development
+*.env
+
+# Build outputs
+dist/
+build/
+.next/
+.expo/
+android/
+ios/
+
+# Logs
+*.log
+logs/
+
+# Generated files
+coverage/
+pdfs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Docker volumes (local dev)
+postgres_data/
+redis_data/

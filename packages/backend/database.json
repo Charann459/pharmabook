@@ -1,0 +1,11 @@
+{
+  "defaultEnv": "default",
+  "default": {
+    "url": {
+      "ENV": "DATABASE_URL"
+    },
+    "dir": "src/db/migrations",
+    "direction": "up",
+    "decamelize": true
+  }
+}

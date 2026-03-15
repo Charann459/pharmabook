@@ -1,0 +1,97 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pharmabook_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - pharmabook_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: pharmabook_redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - pharmabook_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pharmabook_api
+    restart: unless-stopped
+    command: node src/api/server.js
+    env_file: .env
+    ports:
+      - "3001:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - pharmabook_net
+    volumes:
+      - ./src:/app/src
+      - ./scripts:/app/scripts
+      - pdf_output:/app/pdfs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pharmabook_worker
+    restart: unless-stopped
+    command: node src/workers/index.js
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - pharmabook_net
+    volumes:
+      - ./src:/app/src
+      - pdf_output:/app/pdfs
+
+volumes:
+  postgres_data:
+  redis_data:
+  pdf_output:
+
+networks:
+  pharmabook_net:
+    driver: bridge

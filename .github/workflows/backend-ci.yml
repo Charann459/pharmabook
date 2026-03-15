@@ -1,0 +1,107 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'packages/backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/backend/**'
+
+jobs:
+  test:
+    name: Test (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    # Spin up Postgres and Redis as service containers
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: pharmabook_test
+          POSTGRES_USER: pharma
+          POSTGRES_PASSWORD: testpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: packages/backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgres://pharma:testpassword@localhost:5432/pharmabook_test
+          POSTGRES_DB: pharmabook_test
+          POSTGRES_USER: pharma
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+        run: pnpm migrate
+
+      - name: Run tests
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgres://pharma:testpassword@localhost:5432/pharmabook_test
+          POSTGRES_DB: pharmabook_test
+          POSTGRES_USER: pharma
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          REDIS_PASSWORD: ""
+          JWT_SECRET: ci-test-secret-that-is-long-enough-for-validation-32chars
+          JWT_EXPIRES_IN: 7d
+          PDF_OUTPUT_DIR: /tmp/pharmabook-pdfs
+          BARCODE_CACHE_TTL_SECONDS: 60
+          LOW_STOCK_DEFAULT_THRESHOLD: 10
+          EXPIRY_WARN_DAYS: 30
+          CORS_ORIGINS: http://localhost:3000
+        run: pnpm test --coverage
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: packages/backend/coverage/
