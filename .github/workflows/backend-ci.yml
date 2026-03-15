@@ -13,14 +13,9 @@ on:
 
 jobs:
   test:
-    name: Test (Node ${{ matrix.node-version }})
+    name: Test (Node 20)
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [20.x]
-
-    # Spin up Postgres and Redis as service containers
     services:
       postgres:
         image: postgres:16-alpine
@@ -48,7 +43,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: packages/backend
+        working-directory: .
 
     steps:
       - name: Checkout
@@ -58,12 +53,14 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 9
+          run_install: false
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20
           cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
@@ -76,7 +73,7 @@ jobs:
           POSTGRES_PASSWORD: testpassword
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
-        run: pnpm migrate
+        run: node scripts/migrate.js
 
       - name: Run tests
         env:
@@ -97,7 +94,7 @@ jobs:
           LOW_STOCK_DEFAULT_THRESHOLD: 10
           EXPIRY_WARN_DAYS: 30
           CORS_ORIGINS: http://localhost:3000
-        run: pnpm test --coverage
+        run: pnpm test
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
