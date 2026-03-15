@@ -6,6 +6,7 @@ on:
     paths:
       - 'packages/backend/**'
       - '.github/workflows/backend-ci.yml'
+      - 'pnpm-lock.yaml'
   pull_request:
     branches: [main]
     paths:
@@ -41,10 +42,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-    defaults:
-      run:
-        working-directory: .
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -66,6 +63,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Run migrations
+        working-directory: packages/backend
         env:
           DATABASE_URL: postgres://pharma:testpassword@localhost:5432/pharmabook_test
           POSTGRES_DB: pharmabook_test
@@ -73,9 +71,18 @@ jobs:
           POSTGRES_PASSWORD: testpassword
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
+          REDIS_PASSWORD: ""
+          JWT_SECRET: ci-test-secret-that-is-long-enough-for-validation-32chars
+          JWT_EXPIRES_IN: 7d
+          PDF_OUTPUT_DIR: /tmp/pharmabook-pdfs
+          BARCODE_CACHE_TTL_SECONDS: 60
+          LOW_STOCK_DEFAULT_THRESHOLD: 10
+          EXPIRY_WARN_DAYS: 30
+          CORS_ORIGINS: http://localhost:3000
         run: node scripts/migrate.js
 
       - name: Run tests
+        working-directory: packages/backend
         env:
           NODE_ENV: test
           DATABASE_URL: postgres://pharma:testpassword@localhost:5432/pharmabook_test
