@@ -7,6 +7,9 @@
     "lint": "eslint src",
     "test": "echo 'No shared tests yet'"
   },
+  "dependencies": {
+    "zustand": "^4.5.4"
+  },
   "devDependencies": {
     "typescript": "^5.3.0"
   }

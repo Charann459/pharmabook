@@ -1,9 +1,30 @@
-// Placeholder — web dashboard will be built in v2 after mobile is complete.
-export default function Home() {
+'use client';
+
+import { useEffect, useState } from 'react';
+
+export default function HomePage() {
+  const [backendStatus, setBackendStatus] = useState<string>('Checking connection...');
+
+  useEffect(() => {
+    fetch('http://localhost:3000/health')
+      .then(res => res.json())
+      .then(data => {
+        setBackendStatus(JSON.stringify(data, null, 2));
+      })
+      .catch(err => {
+        setBackendStatus('Error connecting to backend: ' + err.message);
+      });
+  }, []);
+
   return (
-    <main style={{ fontFamily: 'sans-serif', padding: '2rem' }}>
-      <h1>PharmaBook Web</h1>
-      <p>Owner dashboard — coming in v2.</p>
+    <main style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+      <h1>Welcome to PharmaBook Web</h1>
+      <p>The frontend application is successfully running on port 3003!</p>
+      
+      <div style={{ marginTop: '2rem', padding: '1rem', background: '#f5f5f5', borderRadius: '8px' }}>
+        <h2>Backend API Status</h2>
+        <pre style={{ margin: 0 }}>{backendStatus}</pre>
+      </div>
     </main>
   );
 }
