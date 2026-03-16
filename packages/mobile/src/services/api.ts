@@ -1,19 +1,34 @@
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL!;
 const TOKEN_KEY = 'pharmabook_token';
 
 // ── Token storage ──────────────────────────────────────────────────
 
-export const saveToken = (token: string) =>
-  SecureStore.setItemAsync(TOKEN_KEY, token);
+export const saveToken = async (token: string) => {
+  if (Platform.OS === 'web') {
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    await SecureStore.setItemAsync(TOKEN_KEY, token);
+  }
+};
 
-export const getToken = () =>
-  SecureStore.getItemAsync(TOKEN_KEY);
+export const getToken = async () => {
+  if (Platform.OS === 'web') {
+    return localStorage.getItem(TOKEN_KEY);
+  } else {
+    return await SecureStore.getItemAsync(TOKEN_KEY);
+  }
+};
 
-export const deleteToken = () =>
-  SecureStore.deleteItemAsync(TOKEN_KEY);
-
+export const deleteToken = async () => {
+  if (Platform.OS === 'web') {
+    localStorage.removeItem(TOKEN_KEY);
+  } else {
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+  }
+};
 // ── Core fetch wrapper ─────────────────────────────────────────────
 
 type RequestOptions = {

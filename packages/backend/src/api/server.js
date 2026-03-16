@@ -37,7 +37,7 @@ const shutdown = async (signal) => {
 };
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT',  () => shutdown('SIGINT'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 process.on('unhandledRejection', (reason) => {
   logger.error('Unhandled rejection', { reason: String(reason) });
@@ -46,5 +46,13 @@ process.on('unhandledRejection', (reason) => {
 server.listen(port, () => {
   logger.info(`PharmaBook API running on port ${port}`);
 });
+
+module.exports = server;
+
+if (!server.listening) {
+  server.listen(port, '0.0.0.0', () => {
+    logger.info(`PharmaBook API running on port ${port} (Network Accessible)`);
+  });
+}
 
 module.exports = server;
