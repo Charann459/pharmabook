@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine
 
 RUN npm install -g pnpm
 
@@ -6,14 +6,13 @@ WORKDIR /app
 
 COPY package.json ./
 
-RUN pnpm install --prod --no-frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 COPY src ./src
 COPY scripts ./scripts
 
-RUN addgroup -S pharma && adduser -S pharma -G pharma
-USER pharma
+RUN mkdir -p /app/pdfs
 
 EXPOSE 3000
 
-CMD ["node", "src/api/server.js"]
+CMD ["pnpm", "start"]

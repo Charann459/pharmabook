@@ -1,0 +1,20 @@
+services:
+  api:
+    command: pnpm dev
+    volumes:
+      - ./src:/app/src
+      - ./scripts:/app/scripts
+      - ./package.json:/app/package.json
+      - pdf_output:/app/pdfs
+    environment:
+      NODE_ENV: development
+
+  worker:
+    command: pnpm dev:worker
+    volumes:
+      - ./src:/app/src
+      - ./scripts:/app/scripts
+      - ./package.json:/app/package.json
+      - pdf_output:/app/pdfs
+    environment:
+      NODE_ENV: development
