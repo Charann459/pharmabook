@@ -4,6 +4,7 @@ services:
     volumes:
       - ./src:/app/src
       - ./scripts:/app/scripts
+      - ./tests:/app/tests
       - ./package.json:/app/package.json
       - pdf_output:/app/pdfs
     environment:
@@ -14,6 +15,7 @@ services:
     volumes:
       - ./src:/app/src
       - ./scripts:/app/scripts
+      - ./tests:/app/tests
       - ./package.json:/app/package.json
       - pdf_output:/app/pdfs
     environment:
