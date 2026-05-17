@@ -2,8 +2,8 @@ const { push, pull } = require('../src/services/sync.service');
 const { pool, query } = require('../src/config/db');
 const { v4: uuidv4 } = require('uuid');
 
-const shopId     = uuidv4();
-const userId     = uuidv4();
+const shopId = uuidv4();
+const userId = uuidv4();
 const medicineId = uuidv4();
 
 beforeAll(async () => {
@@ -24,9 +24,9 @@ afterAll(async () => {
   await query(`DELETE FROM inventory  WHERE shop_id = $1`, [shopId]);
   await query(`DELETE FROM bill_items WHERE bill_id IN (SELECT id FROM bills WHERE shop_id = $1)`, [shopId]);
   await query(`DELETE FROM bills      WHERE shop_id = $1`, [shopId]);
-  await query(`DELETE FROM medicines  WHERE id = $1`,      [medicineId]);
-  await query(`DELETE FROM users      WHERE id = $1`,      [userId]);
-  await query(`DELETE FROM shops      WHERE id = $1`,      [shopId]);
+  await query(`DELETE FROM medicines  WHERE id = $1`, [medicineId]);
+  await query(`DELETE FROM users      WHERE id = $1`, [userId]);
+  await query(`DELETE FROM shops      WHERE id = $1`, [shopId]);
   await pool.end();
 });
 
@@ -37,21 +37,21 @@ describe('syncService.push', () => {
       shop_id: shopId,
       user_id: userId,
       changes: {
-        medicines:  { created: [], updated: [], deleted: [] },
-        bills:      { created: [], updated: [], deleted: [] },
+        medicines: { created: [], updated: [], deleted: [] },
+        bills: { created: [], updated: [], deleted: [] },
         bill_items: { created: [], updated: [], deleted: [] },
-        inventory:  {
+        inventory: {
           created: [{
-            id:                  invId,
-            medicine_id:         medicineId,
-            shop_id:             shopId,
-            qty:                 50,
-            batch_no:            'SYNCBATCH01',
-            expiry_date:         '2027-06-01',
+            id: invId,
+            medicine_id: medicineId,
+            shop_id: shopId,
+            qty: 50,
+            batch_no: 'SYNCBATCH01',
+            expiry_date: '2027-06-01',
             low_stock_threshold: 10,
-            updated_by:          userId,
-            created_at:          new Date().toISOString(),
-            updated_at:          new Date().toISOString(),
+            updated_by: userId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           }],
           updated: [],
           deleted: [],
@@ -80,10 +80,10 @@ describe('syncService.push', () => {
       shop_id: shopId,
       user_id: userId,
       changes: {
-        medicines:  { created: [], updated: [], deleted: [] },
-        bills:      { created: [], updated: [], deleted: [] },
+        medicines: { created: [], updated: [], deleted: [] },
+        bills: { created: [], updated: [], deleted: [] },
         bill_items: { created: [], updated: [], deleted: [] },
-        inventory:  {
+        inventory: {
           created: [],
           updated: [{ id: invId, qty: 999, updated_at: oldTime }],
           deleted: [],
@@ -123,4 +123,42 @@ describe('syncService.pull', () => {
     expect(delta.inventory.updated.length).toBe(0);
     expect(delta.bills.updated.length).toBe(0);
   });
+
+  it('overwrites an older server record with a newer device update', async () => {
+    const invId = uuidv4();
+
+    const serverTime = new Date(Date.now() - 60_000);
+    const deviceTime = new Date();
+
+    await query(
+      `INSERT INTO inventory (id, medicine_id, shop_id, qty, batch_no, expiry_date, updated_at)
+       VALUES ($1,$2,$3,30,'OLDBATCH','2027-06-01',$4)`,
+      [invId, medicineId, shopId, serverTime]
+    );
+
+    await push({
+      shop_id: shopId,
+      user_id: userId,
+      changes: {
+        medicines: { created: [], updated: [], deleted: [] },
+        bills: { created: [], updated: [], deleted: [] },
+        bill_items: { created: [], updated: [], deleted: [] },
+        inventory: {
+          created: [],
+          updated: [{
+            id: invId,
+            qty: 75,
+            updated_at: deviceTime.toISOString(),
+          }],
+          deleted: [],
+        },
+      },
+    });
+
+    const { rows } = await query(`SELECT qty FROM inventory WHERE id = $1`, [invId]);
+
+    expect(rows[0]).toBeDefined();
+    expect(rows[0].qty).toBe(75);
+  });
 });
+
