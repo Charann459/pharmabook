@@ -9,22 +9,38 @@ const { cors: corsCfg, isProduction } = require('../config/env');
 const { errorHandler } = require('./middleware/errorHandler');
 const logger = require('../utils/logger');
 
-const authRoutes      = require('./routes/auth.routes');
-const medicineRoutes  = require('./routes/medicines.routes');
+const authRoutes = require('./routes/auth.routes');
+const medicineRoutes = require('./routes/medicines.routes');
 const inventoryRoutes = require('./routes/inventory.routes');
-const billRoutes      = require('./routes/bills.routes');
-const reportRoutes    = require('./routes/reports.routes');
-const syncRoutes      = require('./routes/sync.routes');
-const userRoutes      = require('./routes/users.routes');
+const billRoutes = require('./routes/bills.routes');
+const reportRoutes = require('./routes/reports.routes');
+const syncRoutes = require('./routes/sync.routes');
+const userRoutes = require('./routes/users.routes');
 
 const app = express();
+console.log('CORS origins loaded:', corsCfg.origins);
 
 /* ── Security ── */
 app.use(helmet());
+const allowedOrigins = Array.isArray(corsCfg.origins)
+  ? corsCfg.origins.map((origin) => origin.trim())
+  : String(corsCfg.origins || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+console.log('CORS origins loaded:', allowedOrigins);
+
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || corsCfg.origins.includes(origin)) return cb(null, true);
-    cb(new Error(`CORS: origin ${origin} not allowed`));
+    const requestOrigin = origin ? origin.trim() : '';
+
+    if (!requestOrigin || allowedOrigins.includes(requestOrigin)) {
+      return cb(null, true);
+    }
+
+    logger.warn(`CORS blocked origin: ${requestOrigin}. Allowed: ${allowedOrigins.join(', ')}`);
+    return cb(new Error(`CORS: origin ${requestOrigin} not allowed`));
   },
   credentials: true,
 }));
@@ -57,13 +73,13 @@ app.get('/health', (req, res) => {
 });
 
 /* ── API routes ── */
-app.use('/api/auth',      authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/inventory', inventoryRoutes);
-app.use('/api/bills',     billRoutes);
-app.use('/api/reports',   reportRoutes);
-app.use('/api/sync',      syncRoutes);
-app.use('/api/users',     userRoutes);
+app.use('/api/bills', billRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/sync', syncRoutes);
+app.use('/api/users', userRoutes);
 
 /* ── 404 ── */
 app.use((req, res) => {
