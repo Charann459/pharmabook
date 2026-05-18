@@ -25,6 +25,13 @@ const schema = Joi.object({
   EXPIRY_WARN_DAYS: Joi.number().default(30),
 
   CORS_ORIGINS: Joi.string().default('http://localhost:8081'),
+
+  // S3 database backups
+  S3_BUCKET_NAME: Joi.string().allow('').default(''),
+  AWS_ACCESS_KEY_ID: Joi.string().allow('').default(''),
+  AWS_SECRET_ACCESS_KEY: Joi.string().allow('').default(''),
+  AWS_REGION: Joi.string().allow('').default('ap-south-1'),
+  BACKUP_RETENTION_DAYS: Joi.number().default(30),
 }).unknown(true);
 
 const { error, value } = schema.validate(process.env);
@@ -74,5 +81,13 @@ module.exports = {
 
   cors: {
     origins: value.CORS_ORIGINS.split(',').map(o => o.trim()),
+  },
+
+  backup: {
+    s3BucketName: value.S3_BUCKET_NAME,
+    awsAccessKeyId: value.AWS_ACCESS_KEY_ID,
+    awsSecretAccessKey: value.AWS_SECRET_ACCESS_KEY,
+    awsRegion: value.AWS_REGION,
+    retentionDays: value.BACKUP_RETENTION_DAYS,
   },
 };

@@ -4,6 +4,8 @@ RUN npm install -g pnpm
 
 WORKDIR /app
 
+RUN apk add --no-cache postgresql-client
+
 COPY package.json ./
 
 RUN pnpm install --no-frozen-lockfile

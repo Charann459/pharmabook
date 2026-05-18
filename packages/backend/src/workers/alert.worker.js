@@ -3,6 +3,7 @@ const { query } = require('../config/db');
 const notificationService = require('../services/notification.service');
 const { inventory: invCfg } = require('../config/env');
 const logger = require('../utils/logger');
+const { runDatabaseBackup } = require('../services/backup.service');
 
 /**
  * Job data: { shop_id } — triggered after every bill creation.
@@ -27,10 +28,10 @@ module.exports = async (job) => {
     await notificationService.sendToShopOwner(shop_id, {
       type: 'LOW_STOCK',
       payload: {
-        medicine_id:   item.medicine_id,
+        medicine_id: item.medicine_id,
         medicine_name: item.name,
-        qty:           item.qty,
-        threshold:     item.low_stock_threshold,
+        qty: item.qty,
+        threshold: item.low_stock_threshold,
       },
     });
     logger.info('alert.worker: low stock notified', { medicine: item.name, qty: item.qty });
@@ -63,12 +64,22 @@ cron.schedule('0 8 * * *', async () => {
       await notificationService.sendToShopOwner(shop.id, {
         type: 'EXPIRY_WARNING',
         payload: {
-          count:    expiring.length,
+          count: expiring.length,
           medicines: expiring,
           warn_days: invCfg.expiryWarnDays,
         },
       });
       logger.info('alert.worker: expiry warning sent', { shop_id: shop.id, count: expiring.length });
     }
+  }
+});
+
+cron.schedule('0 2 * * *', async () => {
+  try {
+    logger.info('Scheduled database backup job started');
+    await runDatabaseBackup();
+    logger.info('Scheduled database backup job completed');
+  } catch (err) {
+    logger.error('Scheduled database backup job failed', { error: err.message });
   }
 });
