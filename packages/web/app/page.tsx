@@ -128,15 +128,23 @@ function HourlySalesChart({
           <h2 className="text-lg font-bold text-slate-950">Hourly sales</h2>
           <p className="text-sm text-slate-500">Revenue distribution for today</p>
         </div>
-        <p className="text-sm font-medium text-emerald-700">Auto-refreshes every 60s</p>
+        <p className="text-sm font-medium text-emerald-700">
+          Auto-refreshes every 60s
+        </p>
       </div>
 
       <div className="flex h-72 items-end gap-2 overflow-x-auto border-b border-slate-200 pb-3">
         {hourly.map((item) => {
-          const height = Math.max((item.revenue / maxRevenue) * 100, item.revenue > 0 ? 8 : 2);
+          const height = Math.max(
+            (item.revenue / maxRevenue) * 100,
+            item.revenue > 0 ? 8 : 2
+          );
 
           return (
-            <div key={item.hour} className="flex min-w-8 flex-1 flex-col items-center justify-end gap-2">
+            <div
+              key={item.hour}
+              className="flex min-w-8 flex-1 flex-col items-center justify-end gap-2"
+            >
               <div className="group relative flex h-56 w-full items-end justify-center">
                 <div
                   className="w-full rounded-t-xl bg-emerald-500 transition hover:bg-emerald-600"
@@ -253,19 +261,30 @@ export default function HomePage() {
             </p>
           </div>
 
-          <button
-            onClick={loadDashboard}
-            className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-600"
-          >
-            Refresh
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="/billing"
+              className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-slate-100"
+            >
+              Open Billing / POS
+            </a>
+
+            <button
+              onClick={loadDashboard}
+              className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-600"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-8">
         {error ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-            <h2 className="text-lg font-bold text-red-800">Unable to load dashboard</h2>
+            <h2 className="text-lg font-bold text-red-800">
+              Unable to load dashboard
+            </h2>
             <p className="mt-2 text-sm text-red-700">{error}</p>
             <button
               onClick={loadDashboard}
@@ -323,7 +342,10 @@ export default function HomePage() {
             <h2 className="text-lg font-bold text-slate-950">Low stock preview</h2>
             <div className="mt-4 space-y-3">
               {data.lowStock.slice(0, 5).map((item, index) => (
-                <div key={item.id || index} className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
+                <div
+                  key={item.id || index}
+                  className="flex items-center justify-between rounded-xl bg-slate-50 p-3"
+                >
                   <span className="font-medium text-slate-800">
                     {item.name || item.medicine_name || 'Medicine'}
                   </span>
@@ -340,15 +362,22 @@ export default function HomePage() {
           </div>
 
           <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <h2 className="text-lg font-bold text-slate-950">Expiring soon preview</h2>
+            <h2 className="text-lg font-bold text-slate-950">
+              Expiring soon preview
+            </h2>
             <div className="mt-4 space-y-3">
               {data.expiring.slice(0, 5).map((item, index) => (
-                <div key={item.id || index} className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
+                <div
+                  key={item.id || index}
+                  className="flex items-center justify-between rounded-xl bg-slate-50 p-3"
+                >
                   <span className="font-medium text-slate-800">
                     {item.name || item.medicine_name || 'Medicine'}
                   </span>
                   <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-700">
-                    {item.expiry_date ? new Date(item.expiry_date).toLocaleDateString() : 'Soon'}
+                    {item.expiry_date
+                      ? new Date(item.expiry_date).toLocaleDateString()
+                      : 'Soon'}
                   </span>
                 </div>
               ))}
