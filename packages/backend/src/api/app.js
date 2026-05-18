@@ -16,9 +16,11 @@ const billRoutes = require('./routes/bills.routes');
 const reportRoutes = require('./routes/reports.routes');
 const syncRoutes = require('./routes/sync.routes');
 const userRoutes = require('./routes/users.routes');
+const shopRoutes = require('./routes/shops.routes');
+
+
 
 const app = express();
-console.log('CORS origins loaded:', corsCfg.origins);
 
 /* ── Security ── */
 app.use(helmet());
@@ -29,7 +31,6 @@ const allowedOrigins = Array.isArray(corsCfg.origins)
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-console.log('CORS origins loaded:', allowedOrigins);
 
 app.use(cors({
   origin: (origin, cb) => {
@@ -80,6 +81,7 @@ app.use('/api/bills', billRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/shops', shopRoutes);
 
 /* ── 404 ── */
 app.use((req, res) => {
