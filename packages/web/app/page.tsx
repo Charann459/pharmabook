@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { API_URL } from '../lib/api';
+import Link from 'next/link';
 
 type DailyReport = {
   date?: string;
@@ -268,6 +269,13 @@ export default function HomePage() {
             >
               Open Billing / POS
             </a>
+
+            <Link
+              href="/inventory"
+              className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-sm hover:bg-slate-100"
+            >
+              Open Inventory
+            </Link>
 
             <button
               onClick={loadDashboard}
