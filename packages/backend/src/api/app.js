@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 
 const { cors: corsCfg, isProduction } = require('../config/env');
 const { errorHandler } = require('./middleware/errorHandler');
+const { optionalAuth } = require('./middleware/optionalAuth');
 const logger = require('../utils/logger');
 
 const authRoutes = require('./routes/auth.routes');
@@ -17,9 +18,6 @@ const reportRoutes = require('./routes/reports.routes');
 const syncRoutes = require('./routes/sync.routes');
 const userRoutes = require('./routes/users.routes');
 const shopRoutes = require('./routes/shops.routes');
-
-
-
 const app = express();
 
 /* ── Security ── */
@@ -30,7 +28,6 @@ const allowedOrigins = Array.isArray(corsCfg.origins)
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
-
 
 app.use(cors({
   origin: (origin, cb) => {
@@ -47,16 +44,34 @@ app.use(cors({
 }));
 
 /* ── Rate limiting ── */
-app.use('/api/auth', rateLimit({
+const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `auth:${req.ip}`,
   message: { error: 'Too many auth attempts, try again in 15 minutes' },
-}));
-app.use('/api', rateLimit({
+});
+
+const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const shopId = req.rateLimitUser?.shop_id;
+
+    if (shopId) {
+      return `shop:${shopId}:${req.ip}`;
+    }
+
+    return `ip:${req.ip}`;
+  },
   message: { error: 'Rate limit exceeded' },
-}));
+});
+
+app.use('/api/auth', authLimiter);
+app.use('/api', optionalAuth, apiLimiter);
 
 /* ── Body parsing ── */
 app.use(express.json({ limit: '1mb' }));
