@@ -285,6 +285,13 @@ export default function HomePage() {
               Open Reports
             </Link>
 
+            <Link
+              href="/settings"
+              className="rounded-xl bg-white px-5 py-3 text-center text-sm font-bold text-slate-950 shadow-sm hover:bg-slate-100"
+            >
+              Open Settings
+            </Link>
+
             <button
               onClick={loadDashboard}
               className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-600"
