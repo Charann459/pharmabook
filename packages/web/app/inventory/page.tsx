@@ -40,6 +40,7 @@ const formatCurrency = (value: string | number | undefined) => {
 
 const formatDate = (value: string) => {
     if (!value) return '-';
+
     return new Date(value).toLocaleDateString('en-IN', {
         day: '2-digit',
         month: 'short',
@@ -51,6 +52,7 @@ const isExpiringSoon = (expiryDate: string) => {
     const expiry = new Date(expiryDate).getTime();
     const now = Date.now();
     const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+
     return expiry > now && expiry <= now + thirtyDays;
 };
 
@@ -104,6 +106,7 @@ export default function InventoryPage() {
             }
 
             const query = params.toString();
+
             const res = await fetch(`${API_URL}/api/inventory${query ? `?${query}` : ''}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -295,28 +298,30 @@ export default function InventoryPage() {
     return (
         <main className="min-h-screen bg-slate-100 text-slate-950">
             <header className="bg-slate-950 text-white">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-8">
+                <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-7 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-8">
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.4em] text-emerald-400">
+                        <p className="text-xs font-bold uppercase tracking-[0.35em] text-emerald-400 sm:tracking-[0.4em]">
                             PharmaBook Web
                         </p>
-                        <h1 className="mt-3 text-3xl font-black">Inventory</h1>
-                        <p className="mt-2 text-sm text-slate-200">
+
+                        <h1 className="mt-3 text-2xl font-black sm:text-3xl">Inventory</h1>
+
+                        <p className="mt-2 max-w-xl text-sm text-slate-200">
                             Stock list, filters, low stock alerts, and batch management.
                         </p>
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
                         <Link
                             href="/"
-                            className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-sm hover:bg-slate-100"
+                            className="w-full rounded-xl bg-white px-5 py-3 text-center text-sm font-bold text-slate-950 shadow-sm hover:bg-slate-100 sm:w-auto"
                         >
                             Back to Dashboard
                         </Link>
 
                         <button
                             onClick={() => setDrawerOpen(true)}
-                            className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-600"
+                            className="w-full rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-600 sm:w-auto"
                         >
                             Add Stock
                         </button>
@@ -324,11 +329,12 @@ export default function InventoryPage() {
                 </div>
             </header>
 
-            <section className="mx-auto max-w-7xl px-6 py-8">
+            <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
                 {error && (
                     <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
                         <h2 className="font-bold">Unable to complete action</h2>
                         <p className="mt-1 text-sm">{error}</p>
+
                         <button
                             onClick={fetchInventory}
                             className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white"
@@ -344,16 +350,16 @@ export default function InventoryPage() {
                     </div>
                 )}
 
-                <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div className="grid gap-4 md:grid-cols-[1fr_auto_auto]">
+                <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                    <div className="flex flex-col gap-4 lg:flex-row">
                         <input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search by medicine, barcode, or batch"
-                            className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
+                            className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
                         />
 
-                        <div className="flex rounded-xl border border-slate-300 bg-slate-50 p-1">
+                        <div className="grid w-full grid-cols-3 gap-1 rounded-xl border border-slate-300 bg-slate-50 p-1 lg:w-auto lg:grid-cols-none lg:auto-cols-max lg:grid-flow-col">
                             {[
                                 { key: 'all', label: 'All' },
                                 { key: 'low', label: 'Low Stock' },
@@ -362,7 +368,7 @@ export default function InventoryPage() {
                                 <button
                                     key={option.key}
                                     onClick={() => setFilter(option.key as FilterType)}
-                                    className={`rounded-lg px-4 py-2 text-sm font-bold ${filter === option.key
+                                    className={`min-w-0 rounded-lg px-2 py-2 text-center text-[11px] font-bold leading-tight sm:px-4 sm:text-sm ${filter === option.key
                                             ? 'bg-slate-950 text-white'
                                             : 'text-slate-600 hover:bg-white'
                                         }`}
@@ -375,9 +381,10 @@ export default function InventoryPage() {
                         <select
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
-                            className="rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500"
+                            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500 lg:w-auto"
                         >
                             <option value="all">All categories</option>
+
                             {categories.map((cat) => (
                                 <option key={cat} value={cat}>
                                     {cat}
@@ -402,9 +409,7 @@ export default function InventoryPage() {
                             ))}
                         </div>
                     ) : filteredItems.length === 0 ? (
-                        <div className="p-8 text-center text-slate-500">
-                            No inventory items found.
-                        </div>
+                        <div className="p-8 text-center text-slate-500">No inventory items found.</div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full min-w-[900px] text-left text-sm">
@@ -429,33 +434,35 @@ export default function InventoryPage() {
                                         return (
                                             <tr
                                                 key={item.id}
-                                                className={
-                                                    low
-                                                        ? 'bg-red-50'
-                                                        : expiring
-                                                            ? 'bg-amber-50'
-                                                            : 'bg-white'
-                                                }
+                                                className={low ? 'bg-red-50' : expiring ? 'bg-amber-50' : 'bg-white'}
                                             >
                                                 <td className="px-5 py-4 font-bold text-slate-900">
-                                                    {item.name}
-                                                    {low && (
-                                                        <span className="ml-2 rounded-full bg-red-100 px-2 py-1 text-xs text-red-700">
-                                                            Low
-                                                        </span>
-                                                    )}
-                                                    {expiring && (
-                                                        <span className="ml-2 rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700">
-                                                            Expiring
-                                                        </span>
-                                                    )}
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <span>{item.name}</span>
+
+                                                        {low && (
+                                                            <span className="rounded-full bg-red-100 px-2 py-1 text-xs text-red-700">
+                                                                Low
+                                                            </span>
+                                                        )}
+
+                                                        {expiring && (
+                                                            <span className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700">
+                                                                Expiring
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
+
                                                 <td className="px-5 py-4 text-slate-600">{item.barcode}</td>
                                                 <td className="px-5 py-4 font-black">{item.qty}</td>
                                                 <td className="px-5 py-4 text-slate-600">{item.batch_no}</td>
-                                                <td className="px-5 py-4 text-slate-600">{formatDate(item.expiry_date)}</td>
+                                                <td className="px-5 py-4 text-slate-600">
+                                                    {formatDate(item.expiry_date)}
+                                                </td>
                                                 <td className="px-5 py-4 text-slate-600">{formatCurrency(item.mrp)}</td>
                                                 <td className="px-5 py-4 text-slate-600">{item.category || '-'}</td>
+
                                                 <td className="px-5 py-4">
                                                     <div className="flex gap-2">
                                                         <button
@@ -465,6 +472,7 @@ export default function InventoryPage() {
                                                         >
                                                             -
                                                         </button>
+
                                                         <button
                                                             onClick={() => adjustQty(item, 1)}
                                                             className="rounded-lg bg-emerald-500 px-3 py-2 font-bold text-white hover:bg-emerald-600"
@@ -485,8 +493,8 @@ export default function InventoryPage() {
 
             {drawerOpen && (
                 <div className="fixed inset-0 z-50 bg-slate-950/40">
-                    <div className="ml-auto h-full w-full max-w-xl overflow-y-auto bg-white p-6 shadow-2xl">
-                        <div className="flex items-start justify-between gap-4">
+                    <div className="ml-auto h-full w-full overflow-y-auto bg-white p-4 shadow-2xl sm:max-w-xl sm:p-6">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                                 <h2 className="text-2xl font-black">Add Stock</h2>
                                 <p className="mt-1 text-sm text-slate-500">
@@ -496,7 +504,7 @@ export default function InventoryPage() {
 
                             <button
                                 onClick={() => setDrawerOpen(false)}
-                                className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700"
+                                className="w-full rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 sm:w-auto"
                             >
                                 Close
                             </button>
@@ -505,16 +513,18 @@ export default function InventoryPage() {
                         <div className="mt-8 space-y-5">
                             <div>
                                 <label className="text-sm font-bold text-slate-700">Medicine search</label>
-                                <div className="mt-2 flex gap-2">
+
+                                <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                                     <input
                                         value={medicineQuery}
                                         onChange={(e) => setMedicineQuery(e.target.value)}
                                         placeholder="Search by medicine name or barcode"
                                         className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
                                     />
+
                                     <button
                                         onClick={searchMedicines}
-                                        className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
+                                        className="w-full rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white sm:w-auto"
                                     >
                                         Search
                                     </button>
@@ -528,8 +538,8 @@ export default function InventoryPage() {
                                             key={medicine.id}
                                             onClick={() => setSelectedMedicine(medicine)}
                                             className={`block w-full border-b border-slate-100 px-4 py-3 text-left last:border-b-0 ${selectedMedicine?.id === medicine.id
-                                                    ? 'bg-emerald-50'
-                                                    : 'bg-white hover:bg-slate-50'
+                                                ? 'bg-emerald-50'
+                                                : 'bg-white hover:bg-slate-50'
                                                 }`}
                                         >
                                             <p className="font-bold">{medicine.name}</p>
@@ -549,7 +559,7 @@ export default function InventoryPage() {
                                 </div>
                             )}
 
-                            <div className="grid gap-4 md:grid-cols-2">
+                            <div className="grid gap-4 sm:grid-cols-2">
                                 <div>
                                     <label className="text-sm font-bold text-slate-700">Quantity</label>
                                     <input
@@ -562,7 +572,9 @@ export default function InventoryPage() {
                                 </div>
 
                                 <div>
-                                    <label className="text-sm font-bold text-slate-700">Low stock threshold</label>
+                                    <label className="text-sm font-bold text-slate-700">
+                                        Low stock threshold
+                                    </label>
                                     <input
                                         type="number"
                                         min="1"

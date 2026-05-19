@@ -1,21 +1,20 @@
 'use client';
 
 import { create } from 'zustand';
-import { authApi } from '../../../shared/src/api/auth.api';
-import { configureClient, ApiError } from '../../../shared/src/api/client';
+import { authApi } from '../../shared/src/api/auth.api';
+import { configureClient, ApiError } from '../../shared/src/api/client';
 import { API_URL } from './api';
-import type { User } from '../../../shared/src/types';
-
+import type { User } from '../../shared/src/types';
 export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
 
 interface AuthState {
   status: AuthStatus;
-  token:  string | null;
-  user:   (User & { shop_name?: string; gst_no?: string }) | null;
-  error:  string | null;
+  token: string | null;
+  user: (User & { shop_name?: string; gst_no?: string }) | null;
+  error: string | null;
 
-  login:   (email: string, password: string) => Promise<void>;
-  logout:  () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
   hydrate: () => Promise<void>;
 }
 
@@ -23,9 +22,9 @@ const TOKEN_KEY = 'pharmabook_token';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   status: 'idle',
-  token:  null,
-  user:   null,
-  error:  null,
+  token: null,
+  user: null,
+  error: null,
 
   login: async (email, password) => {
     set({ status: 'loading', error: null });
@@ -46,7 +45,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { token } = get();
     try {
       if (token) await authApi.logout(token);
-    } catch {}
+    } catch { }
     localStorage.removeItem(TOKEN_KEY);
     set({ status: 'unauthenticated', token: null, user: null, error: null });
   },
