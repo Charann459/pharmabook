@@ -81,6 +81,9 @@ export default function BillingPage() {
     const [message, setMessage] = useState('');
     const [billId, setBillId] = useState<string | null>(null);
     const [billNo, setBillNo] = useState<string | null>(null);
+    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+    const [pdfStatus, setPdfStatus] = useState<'idle' | 'waiting' | 'ready' | 'error'>('idle');
+    const [pdfError, setPdfError] = useState<string | null>(null);
 
     const router = useRouter();
 
@@ -98,6 +101,14 @@ export default function BillingPage() {
             setRole(decoded?.role ?? null);
         }
     }, []);
+
+    useEffect(() => {
+        return () => {
+            if (pdfUrl) {
+                URL.revokeObjectURL(pdfUrl);
+            }
+        };
+    }, [pdfUrl]);
 
     const isAllowed = role === 'owner' || role === 'cashier';
 
@@ -272,7 +283,75 @@ export default function BillingPage() {
     function removeItem(medicineId: string) {
         setCart((current) => current.filter((item) => item.medicine_id !== medicineId));
     }
+    async function waitForPdf(createdBillId: string) {
+        if (!token) return;
 
+        setPdfStatus('waiting');
+        setPdfError(null);
+
+        setPdfUrl((oldUrl) => {
+            if (oldUrl) {
+                URL.revokeObjectURL(oldUrl);
+            }
+
+            return null;
+        });
+
+        const startedAt = Date.now();
+        const timeoutMs = 30_000;
+        const intervalMs = 2_000;
+
+        const checkPdf = async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/bills/${createdBillId}/pdf`, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: 'application/pdf',
+                    },
+                });
+
+                const contentType = res.headers.get('content-type') || '';
+
+                if (res.ok && contentType.includes('application/pdf')) {
+                    const blob = await res.blob();
+
+                    if (blob.size > 0) {
+                        const objectUrl = URL.createObjectURL(blob);
+
+                        setPdfUrl((oldUrl) => {
+                            if (oldUrl) {
+                                URL.revokeObjectURL(oldUrl);
+                            }
+
+                            return objectUrl;
+                        });
+
+                        setPdfStatus('ready');
+                        return;
+                    }
+                }
+
+                if (Date.now() - startedAt >= timeoutMs) {
+                    setPdfStatus('error');
+                    setPdfError('PDF was not ready within 30 seconds. Please try again.');
+                    return;
+                }
+
+                window.setTimeout(checkPdf, intervalMs);
+            } catch {
+                if (Date.now() - startedAt >= timeoutMs) {
+                    setPdfStatus('error');
+                    setPdfError('PDF generation timed out. Please try again.');
+                    return;
+                }
+
+                window.setTimeout(checkPdf, intervalMs);
+            }
+        };
+
+        checkPdf();
+    }
     async function checkout() {
         if (cart.length === 0) {
             setMessage('Cart is empty.');
@@ -319,6 +398,9 @@ export default function BillingPage() {
             setCart([]);
             setDiscount(0);
             setMessage('Checkout successful.');
+            if (createdBillId) {
+                waitForPdf(createdBillId);
+            }
         } catch (err) {
             setMessage(err instanceof Error ? err.message : 'Checkout failed');
         } finally {
@@ -514,16 +596,69 @@ export default function BillingPage() {
                     )}
 
                     {billId && (
-                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
-                            <p className="font-semibold">Bill created successfully.</p>
-                            <p className="mt-1">Bill number: {billNo ?? billId}</p>
-                            <a
-                                className="mt-3 inline-block rounded-xl bg-emerald-600 px-4 py-2 font-semibold text-white"
-                                href={`${API_URL}/api/bills/${billId}/pdf`}
-                                target="_blank"
-                            >
-                                Open PDF
-                            </a>
+                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                    <p className="font-semibold">Bill created successfully.</p>
+                                    <p className="mt-1 text-sm">Bill number: {billNo ?? billId}</p>
+                                </div>
+
+                                <div className="flex flex-col gap-2 sm:flex-row">
+                                    {pdfUrl && (
+                                        <a
+                                            href={pdfUrl}
+                                            download={`bill-${billNo ?? billId}.pdf`}
+                                            className="rounded-xl bg-emerald-600 px-4 py-2 text-center text-sm font-bold text-white hover:bg-emerald-700"
+                                        >
+                                            Download PDF
+                                        </a>
+                                    )}
+
+                                    {pdfUrl && (
+                                        <button
+                                            type="button"
+                                            onClick={() => window.print()}
+                                            className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800"
+                                        >
+                                            Print
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {pdfStatus === 'waiting' && (
+                                <div className="mt-4 rounded-xl border border-emerald-200 bg-white p-4 text-sm text-emerald-800">
+                                    Generating PDF preview... checking every 2 seconds.
+                                </div>
+                            )}
+
+                            {pdfStatus === 'error' && (
+                                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                                    {pdfError || 'PDF preview failed.'}
+                                </div>
+                            )}
+
+                            {pdfUrl && (
+                                <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                                    <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                                        <p className="text-sm font-bold text-slate-900">PDF Preview</p>
+
+                                        <a
+                                            href={pdfUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="text-sm font-bold text-emerald-700 hover:text-emerald-800"
+                                        >
+                                            Open in new tab
+                                        </a>
+                                    </div>
+                                    <iframe
+                                        src={`${pdfUrl}#toolbar=1&navpanes=0&scrollbar=1`}
+                                        title="Bill PDF Preview"
+                                        className="h-[520px] w-full bg-white"
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -626,6 +761,7 @@ export default function BillingPage() {
                     </div>
                 </aside>
             </section>
+
         </main>
     );
 }

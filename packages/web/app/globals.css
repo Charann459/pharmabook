@@ -15,3 +15,22 @@ body {
 body {
     background: #f1f5f9;
 }
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    iframe,
+    iframe * {
+        visibility: visible;
+    }
+
+    iframe {
+        position: fixed;
+        inset: 0;
+        width: 100vw !important;
+        height: 100vh !important;
+        border: none !important;
+    }
+}
