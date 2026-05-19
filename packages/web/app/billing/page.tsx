@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { API_URL } from '../../lib/api';
+import { useRoleGuard } from '../../lib/useRoleGuard';
+import { useRouter } from 'next/navigation';
 
 type JwtPayload = {
     user_id: string;
@@ -44,6 +46,8 @@ const TOKEN_KEY = 'pharmabook_token';
 function decodeJwt(token: string): JwtPayload | null {
     try {
         const payload = token.split('.')[1];
+        if (!payload) return null;
+
         const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
         return JSON.parse(json);
     } catch {
@@ -56,6 +60,8 @@ function money(value: number) {
 }
 
 export default function BillingPage() {
+    const { checking } = useRoleGuard();
+
     const [token, setToken] = useState<string | null>(null);
     const [role, setRole] = useState<string | null>(null);
 
@@ -75,6 +81,13 @@ export default function BillingPage() {
     const [message, setMessage] = useState('');
     const [billId, setBillId] = useState<string | null>(null);
     const [billNo, setBillNo] = useState<string | null>(null);
+
+    const router = useRouter();
+
+    const logout = () => {
+        localStorage.removeItem('pharmabook_token');
+        router.replace('/login');
+    };
 
     useEffect(() => {
         const stored = localStorage.getItem(TOKEN_KEY);
@@ -134,6 +147,7 @@ export default function BillingPage() {
         try {
             setLoadingSearch(true);
             setMessage('');
+
             const data = await apiFetch(
                 `/api/medicines/search?q=${encodeURIComponent(query.trim())}`
             );
@@ -161,6 +175,7 @@ export default function BillingPage() {
 
         try {
             setMessage('');
+
             const data = await apiFetch(
                 `/api/medicines/resolve/${encodeURIComponent(barcode.trim())}`
             );
@@ -311,6 +326,14 @@ export default function BillingPage() {
         }
     }
 
+    if (checking) {
+        return (
+            <main className="flex min-h-screen items-center justify-center bg-slate-100">
+                <p className="text-sm font-bold text-slate-600">Checking access...</p>
+            </main>
+        );
+    }
+
     if (!token) {
         return (
             <main className="min-h-screen bg-slate-100 p-6">
@@ -349,12 +372,22 @@ export default function BillingPage() {
                         </p>
                     </div>
 
-                    <a
-                        href="/"
-                        className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-slate-100"
-                    >
-                        Back to Dashboard
-                    </a>
+                    <div className="flex flex-wrap gap-3">
+                        <a
+                            href="/"
+                            className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-slate-100"
+                        >
+                            Back to Dashboard
+                        </a>
+
+                        <button
+                            type="button"
+                            onClick={logout}
+                            className="rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-red-700"
+                        >
+                            Logout
+                        </button>
+                    </div>
                 </div>
             </section>
 

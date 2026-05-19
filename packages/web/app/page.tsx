@@ -5,6 +5,7 @@ import { API_URL } from '../lib/api';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useNotifications, type NotificationItem } from '../lib/useNotifications';
+import { useRoleGuard } from '../lib/useRoleGuard';
 
 type DailyReport = {
   date?: string;
@@ -84,6 +85,7 @@ const normaliseHourly = (hourly?: DailyReport['hourly']) => {
 
   return Array.from({ length: 24 }, (_, hour) => {
     const found = source.find((item) => Number(item.hour) === hour);
+
     const revenue = found
       ? getNumber(found.revenue, found.total, found.amount, found.sales)
       : 0;
@@ -134,14 +136,17 @@ function HourlySalesChart({
       <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-lg font-bold text-slate-950">Hourly sales</h2>
-          <p className="text-sm text-slate-500">Revenue distribution for today</p>
+          <p className="text-sm text-slate-500">
+            Revenue distribution for today
+          </p>
         </div>
+
         <p className="text-sm font-medium text-emerald-700">
           Auto-refreshes every 60s
         </p>
       </div>
 
-      <div className="flex h-72 items-end gap-2 overflow-x-auto border-b border-slate-200 pb-3">
+      <div className="flex h-72 items-end gap-2 overflow-x-auto overflow-y-visible border-b border-slate-200 pb-3">
         {hourly.map((item) => {
           const height = Math.max(
             (item.revenue / maxRevenue) * 100,
@@ -153,17 +158,19 @@ function HourlySalesChart({
               key={item.hour}
               className="flex min-w-8 flex-1 flex-col items-center justify-end gap-2"
             >
-              <div className="group relative flex h-56 w-full items-end justify-center">
+              <div className="group relative flex h-56 w-full items-end justify-center overflow-visible">
                 <div
                   className="w-full rounded-t-xl bg-emerald-500 transition hover:bg-emerald-600"
                   style={{ height: `${height}%` }}
                 />
-                <div className="pointer-events-none absolute bottom-full mb-2 hidden rounded-lg bg-slate-950 px-3 py-2 text-xs text-white shadow-lg group-hover:block">
+
+                <div className="pointer-events-none absolute left-1/2 top-3 z-20 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-950 px-3 py-2 text-xs text-white shadow-lg group-hover:block">
                   <div>{String(item.hour).padStart(2, '0')}:00</div>
                   <div>{formatCurrency(item.revenue)}</div>
                   <div>{item.bills} bills</div>
                 </div>
               </div>
+
               <span className="text-[11px] text-slate-500">{item.hour}</span>
             </div>
           );
@@ -240,10 +247,12 @@ function NotificationsPanel({
                     <p className="text-sm font-bold text-slate-900">
                       {item.title}
                     </p>
+
                     <span className="text-[11px] text-slate-500">
                       {new Date(item.ts).toLocaleTimeString()}
                     </span>
                   </div>
+
                   <p className="mt-1 text-sm text-slate-600">{item.message}</p>
                 </div>
               ))
@@ -271,6 +280,7 @@ function Toast({
           <p className="font-bold">{item.title}</p>
           <p className="mt-1 text-sm">{item.message}</p>
         </div>
+
         <button onClick={onClose} className="text-sm font-bold">
           X
         </button>
@@ -280,16 +290,21 @@ function Toast({
 }
 
 export default function HomePage() {
+  const router = useRouter();
+  const { role, checking } = useRoleGuard();
+
   const [data, setData] = useState<DashboardState>({
     daily: null,
     lowStock: [],
     expiring: [],
   });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>('');
-  const [expiryBanner, setExpiryBanner] = useState<NotificationItem | null>(null);
-  const router = useRouter();
+  const [expiryBanner, setExpiryBanner] = useState<NotificationItem | null>(
+    null
+  );
 
   const fetchJson = useCallback(async (path: string, token: string) => {
     const res = await fetch(`${API_URL}${path}`, {
@@ -329,6 +344,7 @@ export default function HomePage() {
         lowStock: normaliseArray(lowStockResponse),
         expiring: normaliseArray(expiringResponse),
       });
+
       setLastUpdated(new Date().toLocaleTimeString());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load dashboard');
@@ -358,6 +374,8 @@ export default function HomePage() {
   });
 
   useEffect(() => {
+    if (checking || role !== 'owner') return;
+
     loadDashboard();
 
     const interval = window.setInterval(() => {
@@ -365,7 +383,7 @@ export default function HomePage() {
     }, 60_000);
 
     return () => window.clearInterval(interval);
-  }, [loadDashboard]);
+  }, [checking, role, loadDashboard]);
 
   const revenue = getNumber(
     data.daily?.summary?.revenue,
@@ -384,6 +402,14 @@ export default function HomePage() {
 
   const hourly = useMemo(() => normaliseHourly(data.daily?.hourly), [data.daily]);
 
+  if (checking) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-100">
+        <p className="text-sm font-bold text-slate-600">Checking access...</p>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-slate-100">
       <Toast item={toast} onClose={clearToast} />
@@ -394,7 +420,9 @@ export default function HomePage() {
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400">
               PharmaBook
             </p>
+
             <h1 className="mt-2 text-3xl font-bold">Dashboard</h1>
+
             <p className="mt-1 text-sm text-slate-300">
               Live sales, stock alerts, and expiry overview
             </p>
@@ -409,33 +437,37 @@ export default function HomePage() {
               onMarkAllRead={markAllRead}
             />
 
-            <Link
-              href="/billing"
-              className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-slate-100"
-            >
-              Open Billing / POS
-            </Link>
+            {role === 'owner' ? (
+              <>
+                <Link
+                  href="/billing"
+                  className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-slate-100"
+                >
+                  Open Billing / POS
+                </Link>
 
-            <Link
-              href="/inventory"
-              className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-sm hover:bg-slate-100"
-            >
-              Open Inventory
-            </Link>
+                <Link
+                  href="/inventory"
+                  className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-sm hover:bg-slate-100"
+                >
+                  Open Inventory
+                </Link>
 
-            <Link
-              href="/reports"
-              className="rounded-xl bg-white px-5 py-3 text-center text-sm font-bold text-slate-950 shadow-sm hover:bg-slate-100"
-            >
-              Open Reports
-            </Link>
+                <Link
+                  href="/reports"
+                  className="rounded-xl bg-white px-5 py-3 text-center text-sm font-bold text-slate-950 shadow-sm hover:bg-slate-100"
+                >
+                  Open Reports
+                </Link>
 
-            <Link
-              href="/settings"
-              className="rounded-xl bg-white px-5 py-3 text-center text-sm font-bold text-slate-950 shadow-sm hover:bg-slate-100"
-            >
-              Open Settings
-            </Link>
+                <Link
+                  href="/settings"
+                  className="rounded-xl bg-white px-5 py-3 text-center text-sm font-bold text-slate-950 shadow-sm hover:bg-slate-100"
+                >
+                  Open Settings
+                </Link>
+              </>
+            ) : null}
 
             <button
               onClick={loadDashboard}
@@ -465,6 +497,7 @@ export default function HomePage() {
                 <h2 className="font-bold">{expiryBanner.title}</h2>
                 <p className="mt-1 text-sm">{expiryBanner.message}</p>
               </div>
+
               <button
                 onClick={() => setExpiryBanner(null)}
                 className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white"
@@ -480,7 +513,9 @@ export default function HomePage() {
             <h2 className="text-lg font-bold text-red-800">
               Unable to load dashboard
             </h2>
+
             <p className="mt-2 text-sm text-red-700">{error}</p>
+
             <button
               onClick={loadDashboard}
               className="mt-4 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700"
@@ -505,16 +540,19 @@ export default function HomePage() {
                 value={formatCurrency(revenue)}
                 subtitle="From daily sales report"
               />
+
               <StatCard
                 title="Bills today"
                 value={String(billsToday)}
                 subtitle="Total bills generated today"
               />
+
               <StatCard
                 title="Low stock items"
                 value={String(data.lowStock.length)}
                 subtitle="Items below threshold"
               />
+
               <StatCard
                 title="Expiring within 30 days"
                 value={String(data.expiring.length)}
@@ -534,7 +572,10 @@ export default function HomePage() {
 
         <div className="mt-6 grid gap-5 lg:grid-cols-2">
           <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <h2 className="text-lg font-bold text-slate-950">Low stock preview</h2>
+            <h2 className="text-lg font-bold text-slate-950">
+              Low stock preview
+            </h2>
+
             <div className="mt-4 space-y-3">
               {data.lowStock.slice(0, 5).map((item, index) => (
                 <div
@@ -544,6 +585,7 @@ export default function HomePage() {
                   <span className="font-medium text-slate-800">
                     {item.name || item.medicine_name || 'Medicine'}
                   </span>
+
                   <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-bold text-red-700">
                     Qty {item.qty ?? 0}
                   </span>
@@ -551,7 +593,9 @@ export default function HomePage() {
               ))}
 
               {!loading && data.lowStock.length === 0 ? (
-                <p className="text-sm text-slate-500">No low stock items found.</p>
+                <p className="text-sm text-slate-500">
+                  No low stock items found.
+                </p>
               ) : null}
             </div>
           </div>
@@ -560,6 +604,7 @@ export default function HomePage() {
             <h2 className="text-lg font-bold text-slate-950">
               Expiring soon preview
             </h2>
+
             <div className="mt-4 space-y-3">
               {data.expiring.slice(0, 5).map((item, index) => (
                 <div
@@ -569,6 +614,7 @@ export default function HomePage() {
                   <span className="font-medium text-slate-800">
                     {item.name || item.medicine_name || 'Medicine'}
                   </span>
+
                   <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-700">
                     {item.expiry_date
                       ? new Date(item.expiry_date).toLocaleDateString()
@@ -578,7 +624,9 @@ export default function HomePage() {
               ))}
 
               {!loading && data.expiring.length === 0 ? (
-                <p className="text-sm text-slate-500">No expiring items found.</p>
+                <p className="text-sm text-slate-500">
+                  No expiring items found.
+                </p>
               ) : null}
             </div>
           </div>
