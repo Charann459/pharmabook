@@ -277,6 +277,13 @@ export default function HomePage() {
               Open Inventory
             </Link>
 
+            <Link
+              href="/reports"
+              className="rounded-xl bg-emerald-500 px-5 py-3 text-center text-sm font-bold text-white shadow-sm hover:bg-emerald-600"
+            >
+              Open Reports
+            </Link>
+
             <button
               onClick={loadDashboard}
               className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-600"
