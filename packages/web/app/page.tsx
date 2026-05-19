@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { API_URL } from '../lib/api';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type DailyReport = {
   date?: string;
@@ -175,6 +176,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>('');
+  const router = useRouter();
 
   const fetchJson = useCallback(async (path: string, token: string) => {
     const res = await fetch(`${API_URL}${path}`, {
@@ -196,8 +198,7 @@ export default function HomePage() {
     const token = localStorage.getItem(TOKEN_KEY);
 
     if (!token) {
-      setError('Login token not found. Please login first, then open dashboard.');
-      setLoading(false);
+      router.push('/login');
       return;
     }
 
@@ -289,6 +290,16 @@ export default function HomePage() {
               className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-600"
             >
               Refresh
+            </button>
+
+            <button
+              onClick={() => {
+                localStorage.removeItem('pharmabook_token');
+                router.push('/login');
+              }}
+              className="rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-red-700"
+            >
+              Logout
             </button>
           </div>
         </div>
