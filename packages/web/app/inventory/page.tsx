@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRoleGuard } from '../../lib/useRoleGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -57,6 +58,8 @@ const isExpiringSoon = (expiryDate: string) => {
 };
 
 export default function InventoryPage() {
+    const { checking } = useRoleGuard();
+
     const [items, setItems] = useState<InventoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -71,14 +74,20 @@ export default function InventoryPage() {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [medicineQuery, setMedicineQuery] = useState('');
     const [medicineResults, setMedicineResults] = useState<MedicineSearchItem[]>([]);
-    const [selectedMedicine, setSelectedMedicine] = useState<MedicineSearchItem | null>(null);
+    const [selectedMedicine, setSelectedMedicine] =
+        useState<MedicineSearchItem | null>(null);
 
     const [qty, setQty] = useState('1');
     const [batchNo, setBatchNo] = useState('');
     const [expiryDate, setExpiryDate] = useState('');
     const [threshold, setThreshold] = useState('10');
 
-    const fetchInventory = async () => {
+    const logout = () => {
+        localStorage.removeItem('pharmabook_token');
+        window.location.href = '/login';
+    };
+
+    const fetchInventory = useCallback(async () => {
         const token = getToken();
 
         if (!token) {
@@ -125,7 +134,7 @@ export default function InventoryPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filter, category]);
 
     const searchMedicines = async () => {
         const token = getToken();
@@ -144,7 +153,9 @@ export default function InventoryPage() {
             setError(null);
 
             const res = await fetch(
-                `${API_URL}/api/medicines/search?q=${encodeURIComponent(medicineQuery.trim())}`,
+                `${API_URL}/api/medicines/search?q=${encodeURIComponent(
+                    medicineQuery.trim()
+                )}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -267,9 +278,9 @@ export default function InventoryPage() {
     };
 
     useEffect(() => {
+        if (checking) return;
         fetchInventory();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filter, category]);
+    }, [checking, fetchInventory]);
 
     const categories = useMemo(() => {
         const unique = new Set<string>();
@@ -294,6 +305,14 @@ export default function InventoryPage() {
             );
         });
     }, [items, search]);
+
+    if (checking) {
+        return (
+            <main className="flex min-h-screen items-center justify-center bg-slate-100">
+                <p className="text-sm font-bold text-slate-600">Checking access...</p>
+            </main>
+        );
+    }
 
     return (
         <main className="min-h-screen bg-slate-100 text-slate-950">
@@ -324,6 +343,13 @@ export default function InventoryPage() {
                             className="w-full rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-600 sm:w-auto"
                         >
                             Add Stock
+                        </button>
+
+                        <button
+                            onClick={logout}
+                            className="w-full rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-red-700 sm:w-auto"
+                        >
+                            Logout
                         </button>
                     </div>
                 </div>
@@ -369,8 +395,8 @@ export default function InventoryPage() {
                                     key={option.key}
                                     onClick={() => setFilter(option.key as FilterType)}
                                     className={`min-w-0 rounded-lg px-2 py-2 text-center text-[11px] font-bold leading-tight sm:px-4 sm:text-sm ${filter === option.key
-                                            ? 'bg-slate-950 text-white'
-                                            : 'text-slate-600 hover:bg-white'
+                                        ? 'bg-slate-950 text-white'
+                                        : 'text-slate-600 hover:bg-white'
                                         }`}
                                 >
                                     {option.label}

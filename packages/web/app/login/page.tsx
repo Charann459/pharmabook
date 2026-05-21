@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { decodeJwtPayload, getDefaultRouteForRole } from '../../lib/authGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -38,7 +39,9 @@ export default function LoginPage() {
             }
 
             localStorage.setItem('pharmabook_token', data.token);
-            router.push('/');
+
+            const user = decodeJwtPayload(data.token);
+            router.replace(getDefaultRouteForRole(user?.role));
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Login failed');
         } finally {
@@ -80,7 +83,9 @@ export default function LoginPage() {
                         </div>
 
                         <div>
-                            <label className="text-sm font-bold text-slate-700">Password</label>
+                            <label className="text-sm font-bold text-slate-700">
+                                Password
+                            </label>
                             <input
                                 type="password"
                                 value={password}

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_URL } from '../../lib/api';
+import { useRoleGuard } from '../../lib/useRoleGuard';
 
 const TOKEN_KEY = 'pharmabook_token';
 
@@ -67,6 +68,7 @@ function decodeJwtPayload(token: string): AuthPayload | null {
 
 function roleLabel(role: string) {
     if (role === 'inv_manager') return 'Inventory Manager';
+    if (role === 'inventory_manager') return 'Inventory Manager';
     if (role === 'cashier') return 'Cashier';
     if (role === 'owner') return 'Owner';
     return role;
@@ -92,6 +94,8 @@ function StatusMessage({
 }
 
 export default function SettingsPage() {
+    const { checking } = useRoleGuard();
+
     const router = useRouter();
 
     const [shop, setShop] = useState<Shop>(emptyShop);
@@ -362,6 +366,14 @@ export default function SettingsPage() {
             setChangingPassword(false);
         }
     };
+
+    if (checking) {
+        return (
+            <main className="flex min-h-screen items-center justify-center bg-slate-100">
+                <p className="text-sm font-bold text-slate-600">Checking access...</p>
+            </main>
+        );
+    }
 
     return (
         <main className="min-h-screen bg-slate-100 text-slate-950">

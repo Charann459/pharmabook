@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { useRoleGuard } from '../../lib/useRoleGuard';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -81,6 +82,8 @@ const toDateLabel = (value: string) => {
 };
 
 export default function ReportsPage() {
+    const { checking } = useRoleGuard();
+
     const [activeTab, setActiveTab] = useState<ReportTab>('today');
 
     const [loading, setLoading] = useState(true);
@@ -105,7 +108,8 @@ export default function ReportsPage() {
     const [weekStart, setWeekStart] = useState(getWeekStart());
     const [{ year, month }, setYearMonth] = useState(getCurrentYearMonth());
 
-    const periodForTopMedicines = activeTab === 'week' ? 'week' : activeTab === 'month' ? 'month' : 'today';
+    const periodForTopMedicines =
+        activeTab === 'week' ? 'week' : activeTab === 'month' ? 'month' : 'today';
 
     const maxRevenue = useMemo(() => {
         return Math.max(...chartData.map((point) => point.revenue), 1);
@@ -155,13 +159,15 @@ export default function ReportsPage() {
 
                 const data = await res.json();
 
-                setSummary(data.summary || {
-                    bill_count: 0,
-                    revenue: 0,
-                    gst_collected: 0,
-                    total_discount: 0,
-                    avg_bill_value: 0,
-                });
+                setSummary(
+                    data.summary || {
+                        bill_count: 0,
+                        revenue: 0,
+                        gst_collected: 0,
+                        total_discount: 0,
+                        avg_bill_value: 0,
+                    }
+                );
 
                 const hourly = Array.isArray(data.hourly) ? data.hourly : [];
 
@@ -344,6 +350,14 @@ export default function ReportsPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab, date, weekStart, year, month]);
 
+    if (checking) {
+        return (
+            <main className="flex min-h-screen items-center justify-center bg-slate-100">
+                <p className="text-sm font-bold text-slate-600">Checking access...</p>
+            </main>
+        );
+    }
+
     return (
         <main className="min-h-screen bg-slate-100 text-slate-950">
             <header className="bg-slate-950 text-white">
@@ -511,7 +525,10 @@ export default function ReportsPage() {
                                 <div className="mt-6 overflow-x-auto">
                                     <div className="flex h-72 min-w-[720px] items-end gap-3 border-b border-slate-200 px-2">
                                         {chartData.map((point) => {
-                                            const height = Math.max((point.revenue / maxRevenue) * 220, point.revenue > 0 ? 10 : 2);
+                                            const height = Math.max(
+                                                (point.revenue / maxRevenue) * 220,
+                                                point.revenue > 0 ? 10 : 2
+                                            );
 
                                             return (
                                                 <div key={point.label} className="flex flex-1 flex-col items-center gap-2">
