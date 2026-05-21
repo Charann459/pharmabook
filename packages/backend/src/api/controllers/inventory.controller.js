@@ -74,36 +74,76 @@ const addStock = async (req, res) => {
   const { medicine_id, qty, batch_no, expiry_date, low_stock_threshold } = req.body;
   const { shop_id, user_id } = req.user;
 
+  const normalizedBatchNo = String(batch_no || '').trim();
+  const addQty = Number(qty);
+  const threshold = Number(low_stock_threshold || invCfg.lowStockThreshold);
+
+  if (!medicine_id) {
+    return res.status(400).json({ error: 'medicine_id is required' });
+  }
+
+  if (!normalizedBatchNo) {
+    return res.status(400).json({ error: 'batch_no is required' });
+  }
+
+  if (!expiry_date) {
+    return res.status(400).json({ error: 'expiry_date is required' });
+  }
+
+  if (!Number.isFinite(addQty) || addQty <= 0) {
+    return res.status(400).json({ error: 'qty must be greater than 0' });
+  }
+
   const id = uuidv4();
+
   const { rows } = await query(
     `INSERT INTO inventory
        (id, medicine_id, shop_id, qty, batch_no, expiry_date, low_stock_threshold, updated_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+     VALUES ($1,$2,$3,$4,$5,$6::date,$7,$8)
+     ON CONFLICT (
+       shop_id,
+       medicine_id,
+       LOWER(TRIM(batch_no)),
+       (expiry_date::date)
+     )
+     WHERE deleted_at IS NULL
+     DO UPDATE SET
+       qty = inventory.qty + EXCLUDED.qty,
+       low_stock_threshold = EXCLUDED.low_stock_threshold,
+       updated_by = EXCLUDED.updated_by,
+       updated_at = NOW()
      RETURNING *`,
-    [id, medicine_id, shop_id, qty, batch_no, expiry_date,
-     low_stock_threshold || invCfg.lowStockThreshold, user_id]
-  );
-
-  // Fetch medicine name for notification
-  const { rows: medRows } = await query(
-    `SELECT name FROM medicines WHERE id = $1`, [medicine_id]
-  );
-
-  // Notify owner of stock update
-  await notificationService.sendToShopOwner(shop_id, {
-    type: 'STOCK_UPDATE',
-    payload: {
+    [
+      id,
       medicine_id,
-      medicine_name: medRows[0]?.name,
-      qty_added: qty,
-      new_total: rows[0].qty,
-      batch_no,
+      shop_id,
+      addQty,
+      normalizedBatchNo,
       expiry_date,
-      updated_by: user_id,
-    },
-  });
+      threshold,
+      user_id,
+    ]
+  );
 
-  res.status(201).json(rows[0]);
+  const item = rows[0];
+
+  try {
+    await notificationService.sendToShopOwner(shop_id, {
+      type: 'STOCK_UPDATE',
+      payload: {
+        inventory_id: item.id,
+        medicine_id: item.medicine_id,
+        qty: item.qty,
+        batch_no: item.batch_no,
+        expiry_date: item.expiry_date,
+        updated_by: user_id,
+      },
+    });
+  } catch (err) {
+    console.warn('STOCK_UPDATE notification skipped:', err.message);
+  }
+
+  res.status(200).json(item);
 };
 
 const adjust = async (req, res) => {
