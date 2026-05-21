@@ -1,13 +1,19 @@
-// packages/mobile/app/_layout.tsx
-import "../global.css"; // <-- This is the magic line that enables Tailwind CSS!
+import '../global.css';
 
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { useAuthStore, useIsHydrated } from '../src/store/auth.store';
+import {
+  getMobileDefaultRouteForRole,
+  normalizeRole,
+  useAuthStore,
+  useIsHydrated,
+} from '../src/store/auth.store';
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // Ignore if splash screen is already hidden.
+});
 
 export default function RootLayout() {
   const hydrate = useAuthStore((s) => s.hydrate);
@@ -16,27 +22,45 @@ export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
 
-  // Hydrate auth state from SecureStore/LocalStorage on first mount
   useEffect(() => {
     hydrate();
-  }, []);
+  }, [hydrate]);
 
-  // Once hydrated, hide splash and redirect appropriately
   useEffect(() => {
     if (!isHydrated) return;
 
-    SplashScreen.hideAsync();
+    SplashScreen.hideAsync().catch(() => {
+      // Ignore if already hidden.
+    });
 
-    const inAuthGroup = segments[0] === '(auth)';
+    const group = segments[0];
+    const page = segments[1];
+
+    const inAuthGroup = group === '(auth)';
+    const inAppGroup = group === '(app)';
+    const role = normalizeRole(user?.role);
 
     if (!user && !inAuthGroup) {
-      // Not logged in — send to login
       router.replace('/(auth)/login');
-    } else if (user && inAuthGroup) {
-      // Logged in — send to app
-      router.replace('/(app)');
+      return;
     }
-  }, [isHydrated, user, segments]);
+
+    if (user && inAuthGroup) {
+      router.replace(getMobileDefaultRouteForRole(user.role));
+      return;
+    }
+
+    if (!user || !inAppGroup || !role) return;
+
+    if (role === 'cashier' && page !== 'billing') {
+      router.replace('/(app)/billing');
+      return;
+    }
+
+    if (role === 'inventory_manager' && page !== 'inventory') {
+      router.replace('/(app)/inventory');
+    }
+  }, [isHydrated, user, segments, router]);
 
   return (
     <>

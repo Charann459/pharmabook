@@ -1,66 +1,108 @@
-// packages/mobile/app/(auth)/login.tsx
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useState } from 'react';
-import { useAuthStore } from '../../src/store/auth.store';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { ApiError } from '../../src/services/api';
+import { getMobileDefaultRouteForRole, useAuthStore } from '../../src/store/auth.store';
 
 export default function LoginScreen() {
-  // Pre-filling with the default seed credentials so you don't have to type it every time during testing!
-  const [email, setEmail] = useState('owner@example.com');
-  const [password, setPassword] = useState('secret');
+  const router = useRouter();
 
-  // Grab the login action and loading state from your Zustand store
   const login = useAuthStore((s) => s.login);
   const isLoading = useAuthStore((s) => s.isLoading);
 
+  const [email, setEmail] = useState('owner@example.com');
+  const [password, setPassword] = useState('secret123');
+  const [error, setError] = useState<string | null>(null);
+
   const handleLogin = async () => {
     try {
-      await login(email, password);
-      // Success! The token is saved, and _layout.tsx will automatically redirect you to /(app)
-    } catch (error: any) {
-      // Show an error if the backend rejects the credentials
-      alert(error?.message || 'Failed to login. Please check your credentials.');
+      setError(null);
+
+      const user = await login(email.trim(), password);
+
+      router.replace(getMobileDefaultRouteForRole(user.role));
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+        return;
+      }
+
+      setError('Login failed. Please check your backend connection and credentials.');
     }
   };
 
   return (
-    <View className="flex-1 justify-center px-8 bg-gray-50 dark:bg-gray-900">
-      <View className="mb-10 items-center">
-        <Text className="text-4xl font-bold text-blue-600 mb-2">PharmaBook</Text>
-        <Text className="text-gray-500 text-lg">Manage your pharmacy anywhere</Text>
+    <KeyboardAvoidingView
+      className="flex-1 bg-slate-100"
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <View className="flex-1 justify-center px-6">
+        <View className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Text className="text-xs font-bold uppercase tracking-[4px] text-emerald-500">
+            PharmaBook
+          </Text>
+
+          <Text className="mt-4 text-3xl font-black text-slate-950">Login</Text>
+
+          <Text className="mt-2 text-sm text-slate-500">
+            Sign in to access mobile dashboard, billing, inventory, and reports.
+          </Text>
+
+          {error ? (
+            <View className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
+              <Text className="text-sm font-semibold text-red-700">{error}</Text>
+            </View>
+          ) : null}
+
+          <View className="mt-6">
+            <Text className="text-sm font-bold text-slate-700">Email</Text>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              placeholder="owner@example.com"
+              className="mt-2 rounded-xl border border-slate-300 px-4 py-3 text-base text-slate-950"
+            />
+          </View>
+
+          <View className="mt-4">
+            <Text className="text-sm font-bold text-slate-700">Password</Text>
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              placeholder="secret123"
+              className="mt-2 rounded-xl border border-slate-300 px-4 py-3 text-base text-slate-950"
+            />
+          </View>
+
+          <Pressable
+            onPress={handleLogin}
+            disabled={isLoading}
+            className={`mt-6 rounded-xl px-5 py-4 ${isLoading ? 'bg-emerald-300' : 'bg-emerald-500'
+              }`}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text className="text-center text-sm font-bold text-white">Login</Text>
+            )}
+          </Pressable>
+
+          <Text className="mt-4 text-center text-xs text-slate-400">
+            Owner, cashier, and inventory manager roles route automatically.
+          </Text>
+        </View>
       </View>
-
-      <View className="space-y-4">
-        <TextInput
-          className="w-full bg-white px-4 py-3 rounded-xl border border-gray-200 text-base"
-          placeholder="Email address"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          editable={!isLoading}
-        />
-
-        <TextInput
-          className="w-full bg-white px-4 py-3 rounded-xl border border-gray-200 text-base mt-4"
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          editable={!isLoading}
-        />
-
-        <TouchableOpacity
-          className={`w-full py-4 rounded-xl items-center mt-6 shadow-sm flex-row justify-center ${isLoading ? 'bg-blue-400' : 'bg-blue-600'}`}
-          onPress={handleLogin}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text className="text-white font-bold text-lg">Sign In</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
