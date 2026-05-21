@@ -1,0 +1,51 @@
+name: Web Build
+
+on:
+  push:
+    paths:
+      - "packages/web/**"
+      - "packages/shared/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/web-build.yml"
+  pull_request:
+    paths:
+      - "packages/web/**"
+      - "packages/shared/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/web-build.yml"
+
+jobs:
+  build-web:
+    name: Build packages/web
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+        run: pnpm --filter @pharmabook/web build
