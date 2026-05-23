@@ -8,7 +8,9 @@
     "splash": {
       "backgroundColor": "#0D2B55"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "in.pharmabook.app"
@@ -22,7 +24,8 @@
         "android.permission.CAMERA",
         "android.permission.BLUETOOTH",
         "android.permission.BLUETOOTH_CONNECT",
-        "android.permission.BLUETOOTH_SCAN"
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -37,8 +40,11 @@
     ],
     "scheme": "pharmabook",
     "extra": {
+      "router": {
+        "origin": false
+      },
       "eas": {
-        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+        "projectId": "5500d4c2-0e78-42af-9b32-99e82c9b3753"
       }
     }
   }
