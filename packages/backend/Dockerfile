@@ -7,8 +7,9 @@ WORKDIR /app
 RUN apk add --no-cache postgresql-client
 
 COPY package.json ./
+COPY pnpm-lock.yaml ./
 
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 COPY src ./src
 COPY scripts ./scripts
