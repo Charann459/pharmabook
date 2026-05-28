@@ -16,6 +16,7 @@
       "bundleIdentifier": "in.pharmabook.app"
     },
     "android": {
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#0D2B55"
       },
@@ -35,6 +36,14 @@
         "expo-camera",
         {
           "cameraPermission": "PharmaBook needs camera access to scan medicine barcodes."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
         }
       ]
     ],

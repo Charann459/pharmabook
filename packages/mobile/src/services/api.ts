@@ -1,7 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
+const BASE_URL = 'http://192.168.1.8:3001';
 const TOKEN_KEY = 'pharmabook_token';
 
 // Token storage
@@ -62,14 +62,24 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     }
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  // ── Step 1: catch network-level failures (cleartext blocked, no route, timeout)
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    console.error('[API] Network error:', method, path, reason);
+    throw new ApiError(0, `Network error: ${reason}`);
+  }
+
+  // ── Step 2: log response so ADB logcat shows exactly what came back
+  console.log('[API]', method, path, '→', res.status);
 
   let data: unknown = null;
-
   try {
     data = await res.json();
   } catch {
@@ -82,6 +92,7 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
         ? String((data as { error?: unknown }).error)
         : `Request failed with status ${res.status}`;
 
+    console.error('[API] Error response:', res.status, message);
     throw new ApiError(res.status, message);
   }
 

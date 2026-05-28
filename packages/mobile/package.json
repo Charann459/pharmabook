@@ -16,6 +16,7 @@
     "@nozbe/watermelondb": "^0.28.0",
     "@react-native-community/netinfo": "^11.3.1",
     "expo": "~51.0.0",
+    "expo-build-properties": "^56.0.15",
     "expo-camera": "~15.0.0",
     "expo-constants": "~16.0.0",
     "expo-dev-client": "~4.0.0",
