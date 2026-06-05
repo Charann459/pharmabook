@@ -10,8 +10,9 @@ if (
 
   module.exports = {
     get: async () => null,
-    set: async () => null,
-    del: async () => null,
+    set: async () => 'OK',
+    setex: async () => 'OK',
+    del: async () => 1,
     quit: async () => null,
   };
 
