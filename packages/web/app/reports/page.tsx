@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useRoleGuard } from '../../lib/useRoleGuard';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://pharmabookbackend-production.up.railway.app';
 
 type ReportTab = 'today' | 'week' | 'month' | 'gst';
 
@@ -419,8 +419,8 @@ export default function ReportsPage() {
                                 key={tab.key}
                                 onClick={() => setActiveTab(tab.key as ReportTab)}
                                 className={`rounded-xl px-3 py-3 text-xs font-black sm:text-sm ${activeTab === tab.key
-                                        ? 'bg-slate-950 text-white'
-                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                    ? 'bg-slate-950 text-white'
+                                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                     }`}
                             >
                                 {tab.label}

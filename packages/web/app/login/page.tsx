@@ -5,7 +5,7 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { decodeJwtPayload, getDefaultRouteForRole } from '../../lib/authGuard';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://pharmabookbackend-production.up.railway.app';
 
 export default function LoginPage() {
     const router = useRouter();

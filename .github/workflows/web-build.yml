@@ -47,5 +47,5 @@ jobs:
 
       - name: Build web
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:3001
+          NEXT_PUBLIC_API_URL: https://pharmabookbackend-production.up.railway.app
         run: pnpm --filter @pharmabook/web build

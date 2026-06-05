@@ -1,7 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-const BASE_URL = 'http://192.168.1.8:3001';
+const BASE_URL = 'https://pharmabookbackend-production.up.railway.app';
 const TOKEN_KEY = 'pharmabook_token';
 
 // Token storage
