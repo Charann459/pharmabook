@@ -16,7 +16,6 @@
       "bundleIdentifier": "in.pharmabook.app"
     },
     "android": {
-      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#0D2B55"
       },
