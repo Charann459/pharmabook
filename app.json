@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "5500d4c2-0e78-42af-9b32-99e82c9b3753"
+      }
+    },
+    "android": {
+      "package": "com.cherrz.pharmabook"
+    }
+  }
+}
